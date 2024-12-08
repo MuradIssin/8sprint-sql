@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 )
 
 type ParcelStore struct {
@@ -16,21 +15,22 @@ func NewParcelStore(db *sql.DB) ParcelStore {
 
 func (s ParcelStore) Add(p Parcel) (int, error) {
 	// реализуйте добавление строки в таблицу parcel, используйте данные из переменной p
-
-	res, err := s.db.Exec("INSERT INTO parcel number, client, status, address, created_at VALUES (:number, :client, :status, :address, :created_at)",
-		sql.Named("number", p.Number),
+	res, err := s.db.Exec("INSERT INTO parcel ( client, status, address, created_at) VALUES ( :client, :status, :address, :created_at)",
 		sql.Named("client", p.Client),
 		sql.Named("status", p.Status),
 		sql.Named("address", p.Address),
 		sql.Named("created_at", p.CreatedAt))
+
 	if err != nil {
-		fmt.Println(err)
 		return -1, err
 	}
+
 	id, err := res.LastInsertId()
+
 	if err != nil {
 		return -1, err
 	}
+
 	// верните идентификатор последней добавленной записи
 	return int(id), nil
 }
@@ -38,14 +38,9 @@ func (s ParcelStore) Add(p Parcel) (int, error) {
 func (s ParcelStore) Get(number int) (Parcel, error) {
 	// реализуйте чтение строки по заданному number
 	// здесь из таблицы должна вернуться только одна строка
-	row, err := s.db.Query("SELECT number, client, status, address, created_at FROM parcel WHERE number = :number ", sql.Named("number", number))
-	if err != nil {
-		return Parcel{}, err
-	}
-	defer row.Close()
-	// заполните объект Parcel данными из таблицы
+	row := s.db.QueryRow("SELECT number, client, status, address, created_at FROM parcel WHERE number = :number", sql.Named("number", number))
 	p := Parcel{}
-	err = row.Scan(&p.Number, &p.Client, &p.Status, &p.Address, &p.CreatedAt)
+	err := row.Scan(&p.Number, &p.Client, &p.Status, &p.Address, &p.CreatedAt)
 	if err != nil {
 		return Parcel{}, err
 	}
@@ -102,8 +97,8 @@ func (s ParcelStore) SetAddress(number int, address string) error {
 func (s ParcelStore) Delete(number int) error {
 	// реализуйте удаление строки из таблицы parcel
 	// удалять строку можно только если значение статуса registered
-	_, err = s.db.Exec("DELETE FROM parcel WHERE number = :number AND status = :status",
-		sql.Named("id", 3),
+	_, err := s.db.Exec("DELETE FROM parcel WHERE number = :number AND status = :status",
+		sql.Named("number", number),
 		sql.Named("status", ParcelStatusRegistered))
 	if err != nil {
 		return err
