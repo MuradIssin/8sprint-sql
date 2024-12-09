@@ -22,13 +22,13 @@ func (s ParcelStore) Add(p Parcel) (int, error) {
 		sql.Named("created_at", p.CreatedAt))
 
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
 
 	id, err := res.LastInsertId()
 
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
 
 	// верните идентификатор последней добавленной записи
@@ -52,7 +52,7 @@ func (s ParcelStore) GetByClient(client int) ([]Parcel, error) {
 	// здесь из таблицы может вернуться несколько строк
 	rows, err := s.db.Query("SELECT number, client, status, address, created_at FROM parcel WHERE client = :client ", sql.Named("client", client))
 	if err != nil {
-		return []Parcel{}, err
+		return nil, err
 	}
 	defer rows.Close()
 	// заполните срез Parcel данными из таблицы
@@ -61,9 +61,14 @@ func (s ParcelStore) GetByClient(client int) ([]Parcel, error) {
 		p := Parcel{}
 		err = rows.Scan(&p.Number, &p.Client, &p.Status, &p.Address, &p.CreatedAt)
 		if err != nil {
-			return []Parcel{}, err
+			return nil, err
 		}
 		res = append(res, p)
+	}
+
+	if err = rows.Err(); err != nil {
+		// handle the error here
+		return nil, err
 	}
 
 	return res, nil
@@ -75,7 +80,8 @@ func (s ParcelStore) SetStatus(number int, status string) error {
 		sql.Named("status", status),
 		sql.Named("number", number))
 	if err != nil {
-		return errors.New("обновление адреса не возможно")
+		newErr := errors.New("обновление статуса не возможно")
+		return errors.Join(err, newErr)
 	}
 	return nil
 }
@@ -89,7 +95,8 @@ func (s ParcelStore) SetAddress(number int, address string) error {
 		sql.Named("number", number),
 		sql.Named("reg", ParcelStatusRegistered))
 	if err != nil {
-		return errors.New("обновление адреса не возможно")
+		newErr := errors.New("обновление адреса не возможно")
+		return errors.Join(err, newErr)
 	}
 	return nil
 }

@@ -41,28 +41,33 @@ func TestAddGetDelete(t *testing.T) {
 	// add
 	// добавьте новую посылку в БД, убедитесь в отсутствии ошибки и наличии идентификатора
 	id, err := store.Add(parcel)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, id)
+	require.NoError(t, err)
+	require.NotEmpty(t, id)
 
 	// get
 	// получите только что добавленную посылку, убедитесь в отсутствии ошибки
 	// проверьте, что значения всех полей в полученном объекте совпадают со значениями полей в переменной parcel
 	res, err := store.Get(id)
-	assert.NoError(t, err)
-	assert.Equal(t, parcel.Client, res.Client)
-	assert.Equal(t, parcel.Status, res.Status)
-	assert.Equal(t, parcel.Address, res.Address)
-	assert.Equal(t, parcel.CreatedAt, res.CreatedAt)
+	require.NoError(t, err)
+	// проще структуры сравнивать чем каждое поле
+	parcel.Number = id
+	assert.Equal(t, parcel, res)
+	// assert.Equal(t, parcel.Client, res.Client)
+	// assert.Equal(t, parcel.Status, res.Status)
+	// assert.Equal(t, parcel.Address, res.Address)
+	// assert.Equal(t, parcel.CreatedAt, res.CreatedAt)
+	// assert.Equal(t, parcel.Number, res.Number)
 
 	// delete
 	// удалите добавленную посылку, убедитесь в отсутствии ошибки
 	err = store.Delete(id)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// проверьте, что посылку больше нельзя получить из БД
-	res, err = store.Get(id)
-	assert.Error(t, err)
-	assert.Equal(t, sql.ErrNoRows, err)
+	_, err = store.Get(id)
+	// require.Error(t, err)
+	// assert.Equal(t, sql.ErrNoRows, err) //assert.ErrorIs ...
+	assert.ErrorIs(t, err, sql.ErrNoRows)
 }
 
 // TestSetAddress проверяет обновление адреса
@@ -77,18 +82,18 @@ func TestSetAddress(t *testing.T) {
 	// add
 	// добавьте новую посылку в БД, убедитесь в отсутствии ошибки и наличии идентификатора
 	id, err := store.Add(parcel)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// set address
 	// обновите адрес, убедитесь в отсутствии ошибки
 	newAddress := "new test address"
 	err = store.SetAddress(id, newAddress)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// check
 	// получите добавленную посылку и убедитесь, что адрес обновился
 	res, err := store.Get(id)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, newAddress, res.Address)
 }
 
@@ -104,17 +109,17 @@ func TestSetStatus(t *testing.T) {
 	// add
 	// добавьте новую посылку в БД, убедитесь в отсутствии ошибки и наличии идентификатора
 	id, err := store.Add(parcel)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// set status
 	// обновите статус, убедитесь в отсутствии ошибки
 	err = store.SetStatus(id, ParcelStatusSent)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// check
 	// получите добавленную посылку и убедитесь, что статус обновился
 	res, err := store.Get(id)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, ParcelStatusSent, res.Status)
 }
 
@@ -165,11 +170,12 @@ func TestGetByClient(t *testing.T) {
 		// в parcelMap лежат добавленные посылки, ключ - идентификатор посылки, значение - сама посылка
 		// убедитесь, что все посылки из storedParcels есть в parcelMap
 		// убедитесь, что значения полей полученных посылок заполнены верно
-		assert.Equal(t, parcel.Number, parcelMap[parcel.Number].Number)
-		assert.Equal(t, parcel.Client, parcelMap[parcel.Number].Client)
-		assert.Equal(t, parcel.Status, parcelMap[parcel.Number].Status)
-		assert.Equal(t, parcel.Address, parcelMap[parcel.Number].Address)
-		assert.Equal(t, parcel.CreatedAt, parcelMap[parcel.Number].CreatedAt)
+		assert.Equal(t, parcel, parcelMap[parcel.Number])
+		// assert.Equal(t, parcel.Number, parcelMap[parcel.Number].Number)
+		// assert.Equal(t, parcel.Client, parcelMap[parcel.Number].Client)
+		// assert.Equal(t, parcel.Status, parcelMap[parcel.Number].Status)
+		// assert.Equal(t, parcel.Address, parcelMap[parcel.Number].Address)
+		// assert.Equal(t, parcel.CreatedAt, parcelMap[parcel.Number].CreatedAt)
 
 	}
 }
